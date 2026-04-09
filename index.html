@@ -12,7 +12,6 @@
       --muted: #6b7280;
       --border: rgba(0,0,0,0.12);
       --shadow: 0 8px 20px rgba(0,0,0,0.08);
-      --btn: #eef2ff;
       --btn-active: #dbe4ff;
       --board-max-width: 430px;
       --controls-height: 86px;
@@ -77,13 +76,13 @@
       position: absolute;
       top: 6px;
       z-index: 3;
-      pointer-events: none;
     }
 
     .hud-left {
       left: 6px;
       display: grid;
       gap: 4px;
+      pointer-events: none;
     }
 
     .hud-right {
@@ -884,9 +883,13 @@
         e.stopPropagation();
         handler(e);
       };
-      el.addEventListener('click', wrapped);
-      el.addEventListener('touchend', wrapped, { passive: false });
-      el.addEventListener('pointerup', wrapped);
+
+      if (window.PointerEvent) {
+        el.addEventListener('pointerup', wrapped);
+      } else {
+        el.addEventListener('touchend', wrapped, { passive: false });
+        el.addEventListener('click', wrapped);
+      }
     }
 
     function bindHoldButton(button, onPress, onRelease) {
@@ -906,13 +909,20 @@
         onRelease();
       };
 
-      button.addEventListener('pointerdown', press);
-      button.addEventListener('touchstart', press, { passive: false });
-      button.addEventListener('pointerup', release);
-      button.addEventListener('pointercancel', release);
-      button.addEventListener('pointerleave', release);
-      button.addEventListener('touchend', release, { passive: false });
-      button.addEventListener('touchcancel', release, { passive: false });
+      if (window.PointerEvent) {
+        button.addEventListener('pointerdown', press);
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointercancel', release);
+        button.addEventListener('pointerleave', release);
+      } else {
+        button.addEventListener('touchstart', press, { passive: false });
+        button.addEventListener('touchend', release, { passive: false });
+        button.addEventListener('touchcancel', release, { passive: false });
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      }
     }
 
     function bindTapButton(button, onTap) {
@@ -931,13 +941,20 @@
         button.classList.remove('active');
       };
 
-      button.addEventListener('pointerdown', press);
-      button.addEventListener('touchstart', press, { passive: false });
-      button.addEventListener('pointerup', off);
-      button.addEventListener('pointercancel', off);
-      button.addEventListener('pointerleave', off);
-      button.addEventListener('touchend', off, { passive: false });
-      button.addEventListener('touchcancel', off, { passive: false });
+      if (window.PointerEvent) {
+        button.addEventListener('pointerdown', press);
+        button.addEventListener('pointerup', off);
+        button.addEventListener('pointercancel', off);
+        button.addEventListener('pointerleave', off);
+      } else {
+        button.addEventListener('touchstart', press, { passive: false });
+        button.addEventListener('touchend', off, { passive: false });
+        button.addEventListener('touchcancel', off, { passive: false });
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      }
     }
 
     function pressLeft() {
