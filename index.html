@@ -1,1150 +1,1420 @@
-<!-- version: v1.0.6 -->
+<!-- ver. 0.1.8 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Tetris Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roguelike Prototype</title>
   <style>
-    :root {
-      --bg: #f7f7f8;
-      --panel: rgba(255,255,255,0.92);
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: rgba(0,0,0,0.12);
-      --shadow: 0 8px 20px rgba(0,0,0,0.08);
-      --btn-active: #dbe4ff;
-      --board-max-width: 430px;
-      --controls-height: 86px;
-      --gap: 8px;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
     html, body {
       margin: 0;
       padding: 0;
+      background: #0b0d10;
+      color: #e7edf5;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+    }
+    #wrap {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      height: 100vh;
+    }
+    canvas {
+      width: 100%;
       height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    body {
-      min-height: 100dvh;
-    }
-
-    button,
-    .touch-btn,
-    .side-btn,
-    .main-btn,
-    canvas {
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    .app {
-      width: 100%;
-      max-width: var(--board-max-width);
-      margin: 0 auto;
-      height: 100dvh;
-      display: grid;
-      grid-template-rows: minmax(0, 1fr) auto;
-      gap: var(--gap);
-      padding: 8px;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom));
-      overflow: hidden;
-    }
-
-    .board-wrap {
-      position: relative;
-      min-height: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    canvas {
       display: block;
-      width: min(100%, calc((100dvh - var(--controls-height) - 32px - env(safe-area-inset-bottom)) / 2));
-      height: auto;
-      aspect-ratio: 1 / 2;
-      background: #dddddd;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: 10px;
-      touch-action: manipulation;
+      background: #111;
     }
-
-    .hud-left,
-    .hud-right {
-      position: absolute;
-      top: 6px;
-      z-index: 3;
+    #side {
+      border-left: 1px solid #1f2937;
+      padding: 16px;
+      background: #0f1318;
+      box-sizing: border-box;
+      overflow: auto;
     }
-
-    .hud-left {
-      left: 6px;
-      display: grid;
-      gap: 4px;
-      pointer-events: none;
+    h1 {
+      margin: 0 0 12px;
+      font-size: 20px;
     }
-
-    .hud-right {
-      right: 6px;
+    .panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .row {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: stretch;
-      pointer-events: auto;
-    }
-
-    .hud-box,
-    .hold-box {
-      background: var(--panel);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      backdrop-filter: blur(6px);
-    }
-
-    .hud-box {
-      padding: 7px 10px;
-      min-width: 78px;
-    }
-
-    .hud-label,
-    .hold-title {
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .hud-value {
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1.1;
-    }
-
-    .hold-box {
-      padding: 7px 9px 9px;
-      pointer-events: none;
-    }
-
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 12px);
-      grid-template-rows: repeat(4, 12px);
-      gap: 1px;
-      justify-content: center;
-    }
-
-    .mini-cell {
-      width: 12px;
-      height: 12px;
-      background: rgba(255,255,255,0.55);
-      border: 1px solid rgba(0,0,0,0.08);
-    }
-
-    .side-btn {
-      appearance: none;
-      border: 1px solid rgba(0,0,0,0.14);
-      background: rgba(255,255,255,0.92);
-      color: var(--text);
-      border-radius: 12px;
-      min-height: 42px;
-      padding: 0 12px;
+      justify-content: space-between;
+      gap: 12px;
       font-size: 14px;
-      font-weight: 800;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-      touch-action: manipulation;
+      margin: 4px 0;
     }
-
-    .side-btn:active,
-    .side-btn.active {
-      background: var(--btn-active);
-      transform: translateY(1px);
+    .bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #5b1111;
+      margin-top: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
-
-    .overlay {
-      position: absolute;
+    .bar > div {
+      height: 100%;
+      background: #2dd45b;
+    }
+    .hint {
+      font-size: 12px;
+      color: #aab6c5;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.08);
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    #overlay {
+      position: fixed;
       inset: 0;
-      z-index: 5;
+      pointer-events: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      background: rgba(255,255,255,0.70);
-      backdrop-filter: blur(4px);
+      color: white;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      font-weight: 800;
+      font-size: 42px;
       opacity: 0;
+      transition: opacity 200ms;
+    }
+    #versionTag {
+      position: fixed;
+      top: 10px;
+      right: 12px;
+      z-index: 20;
       pointer-events: none;
-      transition: opacity 0.2s ease;
+      font-size: 12px;
+      color: rgba(255,255,255,0.72);
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 4px 10px;
+      backdrop-filter: blur(4px);
     }
 
-    .overlay.show {
-      opacity: 1;
-      pointer-events: auto;
+    #floorTransition {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 18%, rgba(11,13,16,0.0) 38%),
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(11,13,16,0.88));
+      transition: opacity 420ms ease;
     }
 
-    .overlay-card {
-      width: 100%;
-      max-width: 260px;
-      background: rgba(255,255,255,0.97);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-      text-align: center;
-    }
-
-    .overlay-title {
-      font-size: 24px;
-      font-weight: 900;
-      margin-bottom: 8px;
-    }
-
-    .overlay-text {
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--muted);
-      white-space: pre-line;
-      margin-bottom: 14px;
-    }
-
-    .overlay-buttons {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .main-btn {
-      appearance: none;
-      border: 0;
-      border-radius: 12px;
-      padding: 11px 16px;
-      font-size: 14px;
-      font-weight: 800;
-      background: #dfe7ff;
-      color: #111827;
-      touch-action: manipulation;
-    }
-
-    .main-btn.secondary {
-      background: #7f8db8;
-      color: #fff;
-    }
-
-    .touch-controls {
-      min-height: var(--controls-height);
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
-      align-items: stretch;
-    }
-
-    .touch-btn {
-      appearance: none;
-      border: 1px solid rgba(0,0,0,0.14);
-      background: #f3f4f6;
-      color: var(--text);
-      border-radius: 16px;
-      min-height: 56px;
-      font-size: 20px;
-      font-weight: 800;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-      touch-action: manipulation;
-      padding: 0;
-    }
-
-    .touch-btn.drop {
-      font-size: 13px;
-      letter-spacing: 0.04em;
-    }
-
-    .touch-btn.active,
-    .touch-btn:active,
-    .main-btn:active {
-      background: var(--btn-active);
-      transform: translateY(1px);
-    }
-
-    @media (max-width: 390px) {
-      .hud-box {
-        min-width: 72px;
-      }
-
-      .hud-value {
-        font-size: 16px;
-      }
-
-      .touch-btn {
-        min-height: 54px;
-        font-size: 18px;
-      }
-
-      .touch-btn.drop {
-        font-size: 12px;
-      }
-    }
   </style>
 </head>
-<body onselectstart="return false;">
-  <div class="app">
-    <section class="board-wrap">
-      <canvas id="board" width="200" height="400"></canvas>
-
-      <div class="hud-left">
-        <div class="hud-box">
-          <div class="hud-label">Score</div>
-          <div class="hud-value" id="score">0</div>
-        </div>
-        <div class="hud-box">
-          <div class="hud-label">Level</div>
-          <div class="hud-value" id="level">1</div>
-        </div>
-        <div class="hud-box">
-          <div class="hud-label">Lines</div>
-          <div class="hud-value" id="lines">0</div>
-        </div>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <div id="side">
+      <h1>迷宮試作版</h1>
+      <div class="panel">
+        <div class="row"><span>階層</span><strong id="floorText"></strong></div>
+        <div class="row"><span>HP</span><strong id="hpText"></strong></div>
+        <div class="bar"><div id="hpFill"></div></div>
+        <div class="row"><span>Level</span><strong id="levelText"></strong></div>
+        <div class="row"><span>Gold</span><strong id="goldText"></strong></div>
+        <div class="row"><span>鍵</span><strong id="keyText"></strong></div>
+        <div class="row"><span>毒</span><strong id="poisonText"></strong></div>
+        <div class="row"><span>毒消しキノコ</span><strong id="mushroomText"></strong></div>
       </div>
 
-      <div class="hud-right">
-        <div class="hold-box">
-          <div class="hold-title">Hold</div>
-          <div id="hold" class="mini-grid"></div>
-        </div>
-        <button id="pauseBtn" class="side-btn" type="button">Pause</button>
+      <div class="panel">
+        <div class="row"><span>武器</span><strong id="weaponText"></strong></div>
+        <div class="row"><span>剣耐久</span><strong id="swordText"></strong></div>
+        <div class="row"><span>弓の矢</span><strong id="bowText"></strong></div>
+        <div id="buffs"></div>
       </div>
 
-      <div id="overlay" class="overlay show">
-        <div class="overlay-card">
-          <div id="overlayTitle" class="overlay-title">READY</div>
-          <div id="overlayText" class="overlay-text">Startで開始
-盤面タップでもポーズ / 再開</div>
-          <div class="overlay-buttons">
-            <button id="startBtn" class="main-btn" type="button">Start</button>
-            <button id="resumeBtn" class="main-btn secondary" type="button" style="display:none;">Resume</button>
-          </div>
-        </div>
+      <div class="panel hint">
+        <div><strong>操作</strong></div>
+        <div>移動: 矢印キー / WASD / テンキー風 8方向</div>
+        <div>剣: J（常備の木の剣あり）</div>
+        <div>弓: K</div>
+        <div>毒消しキノコ: L</div>
+        <div>再開始: R</div>
       </div>
-    </section>
 
-    <section class="touch-controls">
-      <button class="touch-btn" id="btnZ" type="button">Z</button>
-      <button class="touch-btn" id="btnX" type="button">X</button>
-      <button class="touch-btn" id="btnLeft" type="button">←</button>
-      <button class="touch-btn drop" id="btnDrop" type="button">DROP</button>
-      <button class="touch-btn" id="btnRight" type="button">→</button>
-    </section>
+      <div class="panel hint">
+        <div><strong>入っている要素</strong></div>
+        <div>プレイヤー中心スクロール、8方向慣性移動、接触ダメージ0.2秒更新、伸びて戻る多段ヒット剣、弓、毒、毒消しキノコ、砲台、増産する巣、フロアマスター、鍵、階段、軽快な効果音、ヒット爆発、フロア遷移演出。</div>
+      </div>
+
+      <div class="panel hint">
+        <div><strong>試作の割り切り</strong></div>
+        <div>精密多角形判定や全仕様の完全再現ではなく、まず遊べるHTML試作として寄せています。壁と通路の色テーブル、個性的な地形、AI差、物理は簡略版です。</div>
+      </div>
+    </div>
   </div>
+  <div id="overlay"></div>
+  <div id="floorTransition"></div>
+  <div id="versionTag">ver. 0.1.8</div>
 
   <script>
-    const COLS = 20;
-    const ROWS = 40;
-    const HIDDEN_ROWS = 2;
-    const TOTAL_ROWS = ROWS + HIDDEN_ROWS;
-    const BLOCK = 10;
-    const STEP = 1000 / 60;
-
-    const COLORS = {
-      I: '#ff0000',
-      J: '#0000ff',
-      L: '#ff8c00',
-      T: '#00d8ff',
-      O: '#d0d005',
-      S: '#02e902',
-      Z: '#ff69b4'
-    };
-
-    const SHAPES = {
-      I: [
-        [[0,1],[1,1],[2,1],[3,1]],
-        [[2,0],[2,1],[2,2],[2,3]],
-        [[0,2],[1,2],[2,2],[3,2]],
-        [[1,0],[1,1],[1,2],[1,3]]
-      ],
-      O: [
-        [[1,0],[2,0],[1,1],[2,1]],
-        [[1,0],[2,0],[1,1],[2,1]],
-        [[1,0],[2,0],[1,1],[2,1]],
-        [[1,0],[2,0],[1,1],[2,1]]
-      ],
-      T: [
-        [[1,0],[0,1],[1,1],[2,1]],
-        [[1,0],[1,1],[2,1],[1,2]],
-        [[0,1],[1,1],[2,1],[1,2]],
-        [[1,0],[0,1],[1,1],[1,2]]
-      ],
-      S: [
-        [[1,0],[2,0],[0,1],[1,1]],
-        [[1,0],[1,1],[2,1],[2,2]],
-        [[1,1],[2,1],[0,2],[1,2]],
-        [[0,0],[0,1],[1,1],[1,2]]
-      ],
-      Z: [
-        [[0,0],[1,0],[1,1],[2,1]],
-        [[2,0],[1,1],[2,1],[1,2]],
-        [[0,1],[1,1],[1,2],[2,2]],
-        [[1,0],[0,1],[1,1],[0,2]]
-      ],
-      J: [
-        [[0,0],[0,1],[1,1],[2,1]],
-        [[1,0],[2,0],[1,1],[1,2]],
-        [[0,1],[1,1],[2,1],[2,2]],
-        [[1,0],[1,1],[0,2],[1,2]]
-      ],
-      L: [
-        [[2,0],[0,1],[1,1],[2,1]],
-        [[1,0],[1,1],[1,2],[2,2]],
-        [[0,1],[1,1],[2,1],[0,2]],
-        [[0,0],[1,0],[1,1],[1,2]]
-      ]
-    };
-
-    const JLSTZ_KICKS = {
-      '0>1': [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-      '1>0': [[0,0],[1,0],[1,-1],[0,2],[1,2]],
-      '1>2': [[0,0],[1,0],[1,-1],[0,2],[1,2]],
-      '2>1': [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-      '2>3': [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
-      '3>2': [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-      '3>0': [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-      '0>3': [[0,0],[1,0],[1,1],[0,-2],[1,-2]]
-    };
-
-    const I_KICKS = {
-      '0>1': [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
-      '1>0': [[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
-      '1>2': [[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
-      '2>1': [[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
-      '2>3': [[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
-      '3>2': [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
-      '3>0': [[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
-      '0>3': [[0,0],[-1,0],[2,0],[-1,2],[2,-1]]
-    };
-
-    const SCORE_TABLE = { 1: 100, 2: 300, 3: 500, 4: 800 };
-
-    const canvas = document.getElementById('board');
+    const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const levelEl = document.getElementById('level');
-    const linesEl = document.getElementById('lines');
-    const holdEl = document.getElementById('hold');
-    const overlayEl = document.getElementById('overlay');
-    const overlayTitleEl = document.getElementById('overlayTitle');
-    const overlayTextEl = document.getElementById('overlayText');
-    const startBtn = document.getElementById('startBtn');
-    const resumeBtn = document.getElementById('resumeBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
+    const overlay = document.getElementById('overlay');
+    const floorTransition = document.getElementById('floorTransition');
 
-    const btnZ = document.getElementById('btnZ');
-    const btnX = document.getElementById('btnX');
-    const btnLeft = document.getElementById('btnLeft');
-    const btnDrop = document.getElementById('btnDrop');
-    const btnRight = document.getElementById('btnRight');
+    const ui = {
+      floorText: document.getElementById('floorText'),
+      hpText: document.getElementById('hpText'),
+      hpFill: document.getElementById('hpFill'),
+      levelText: document.getElementById('levelText'),
+      goldText: document.getElementById('goldText'),
+      keyText: document.getElementById('keyText'),
+      poisonText: document.getElementById('poisonText'),
+      mushroomText: document.getElementById('mushroomText'),
+      weaponText: document.getElementById('weaponText'),
+      swordText: document.getElementById('swordText'),
+      bowText: document.getElementById('bowText'),
+      buffs: document.getElementById('buffs'),
+    };
 
-    let game = null;
-    let lastTime = 0;
-    let accumulator = 0;
-
-    const IS_TOUCH_DEVICE =
-      ('ontouchstart' in window) ||
-      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
-
-    let lastTouchTime = 0;
-
-    function markTouch() {
-      lastTouchTime = Date.now();
+    // ------------------------------
+    // Audio / SE
+    // ------------------------------
+    // ブラウザの自動再生制限対策。
+    // 最初のキー入力 or クリックをきっかけに AudioContext を有効化する。
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioUnlocked = false;
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioUnlocked = true;
     }
+    addEventListener('pointerdown', unlockAudio, { once: true });
+    addEventListener('keydown', unlockAudio, { once: true });
 
-    function isSyntheticMouseAfterTouch() {
-      return Date.now() - lastTouchTime < 700;
-    }
+    // 効果音をその場で合成して鳴らす。
+    // kind を差し替えるとアクションごとの印象を変えられる。
+    function playSfx(kind){
+      if (!audioUnlocked) return;
+      const now = audioCtx.currentTime;
+      const master = audioCtx.createGain();
+      master.connect(audioCtx.destination);
+      // 全SEの最終音量。ここがいちばん触る頻度が高い。
+      // 目安: 0.05 だとかなり小さめ、0.2 前後で聞きやすい。
+      master.gain.value = 1.0;
 
-    function clearSelection() {
-      const sel = window.getSelection ? window.getSelection() : null;
-      if (sel && sel.removeAllRanges) {
-        sel.removeAllRanges();
+      // 各SEの音色パラメータ。
+      // freq: 開始周波数 / end: 終了周波数 / dur: 長さ(秒) / noise: ノイズ量
+      const cfg = {
+        sword: {type:'triangle', freq:220, end:440, dur:0.07, noise:0.015},
+        bow: {type:'square', freq:520, end:260, dur:0.08, noise:0.008},
+        mushroom: {type:'sine', freq:660, end:920, dur:0.09, noise:0.0},
+        hit: {type:'triangle', freq:340, end:120, dur:0.08, noise:0.02},
+        explode: {type:'sawtooth', freq:180, end:60, dur:0.14, noise:0.03},
+        floor: {type:'sine', freq:260, end:520, dur:0.22, noise:0.01},
+        level: {type:'triangle', freq:330, end:660, dur:0.2, noise:0.0},
+        pickup: {type:'sine', freq:540, end:740, dur:0.08, noise:0.0},
+        damage: {type:'square', freq:160, end:90, dur:0.1, noise:0.025},
+      }[kind];
+      if (!cfg) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = cfg.type;
+      osc.frequency.setValueAtTime(cfg.freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, cfg.end), now + cfg.dur);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.9, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + cfg.dur);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(now);
+      osc.stop(now + cfg.dur + 0.02);
+
+      if (cfg.noise > 0) {
+        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * cfg.dur, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / data.length * 9);
+        const noise = audioCtx.createBufferSource();
+        const noiseGain = audioCtx.createGain();
+        noise.buffer = buffer;
+        noiseGain.gain.value = cfg.noise;
+        noise.connect(noiseGain);
+        noiseGain.connect(master);
+        noise.start(now);
+        noise.stop(now + cfg.dur);
       }
     }
 
-    function createMiniGrid(container) {
-      container.innerHTML = '';
-      for (let i = 0; i < 16; i++) {
-        const div = document.createElement('div');
-        div.className = 'mini-cell';
-        container.appendChild(div);
-      }
-    }
-
-    function paintMini(container, type) {
-      createMiniGrid(container);
-      if (!type) return;
-      const cells = container.querySelectorAll('.mini-cell');
-      const coords = SHAPES[type][0];
-      coords.forEach(([x, y]) => {
-        const idx = y * 4 + x;
-        if (cells[idx]) {
-          cells[idx].style.background = COLORS[type];
-          cells[idx].style.borderColor = 'rgba(0,0,0,0.12)';
-        }
+    // 弾ヒットや死亡時のパステル爆発エフェクトを追加。
+    // scale を上げると半径もSEの派手さも大きくなる。
+    function addPastelExplosion(x,y,scale=1){
+      const palette = ['#ffd6e7','#d6f6ff','#f7e2ff','#fff0c9','#d8ffd6','#e3dcff'];
+      state.effects.push({
+        type:'explosion',
+        x, y,
+        time:0,
+        duration:0.32,
+        radius:12 * scale,
+        palette,
       });
+      playSfx(scale > 1.2 ? 'explode' : 'hit');
     }
 
-    function makeEmptyBoard() {
-      return Array.from({ length: TOTAL_ROWS }, () => Array(COLS).fill(null));
+    // フロア切り替え時の全画面フェード。
+    // 前半で白く被せ、後半でゆっくり抜く。
+    function addFloorTransition(){
+      floorTransition.style.transition = 'none';
+      floorTransition.style.opacity = '0';
+      void floorTransition.offsetWidth;
+      floorTransition.style.transition = 'opacity 180ms ease';
+      floorTransition.style.opacity = '1';
+      setTimeout(() => {
+        floorTransition.style.transition = 'opacity 480ms ease';
+        floorTransition.style.opacity = '0';
+      }, 170);
     }
 
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+    // 一時エフェクトの寿命管理。
+    function updateEffects(dt){
+      for (const fx of state.effects) fx.time += dt;
+      state.effects = state.effects.filter(fx => fx.time < fx.duration);
+    }
+
+    // 一時エフェクトの描画。
+    // 現在は爆発リングのみ。screen合成でふんわり明るく見せる。
+    function drawEffects(cam){
+      for (const fx of state.effects) {
+        if (fx.type !== 'explosion') continue;
+        const t = fx.time / fx.duration;
+        const pulse = 1 + t * 2.6;
+        const r = fx.radius * pulse;
+        const color = fx.palette[Math.floor(t * 18) % fx.palette.length];
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = Math.max(0, 0.48 * (1 - t));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4 + (1 - t) * 8;
+        ctx.beginPath();
+        ctx.arc(fx.x - cam.x, fx.y - cam.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = Math.max(0, 0.22 * (1 - t));
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(fx.x - cam.x, fx.y - cam.y, r * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
-      return arr;
     }
 
-    function newBag() {
-      return shuffle(['I','O','T','S','Z','J','L']);
+    // 描画サイズまわりの調整パラメータ。
+    // BASE_VIEW_* : 従来の「見える範囲を基準にする」サイズ
+    // TARGET_GAME_*: 指定した論理サイズそのものを拡大縮小したい時の基準サイズ
+    // SCALE_BY_TARGET_SIZE を true にすると、TARGET_GAME_W/H を基準に常に同じ論理画面サイズで描画する。
+    // 例: 960x540 にすると、ゲームの見た目をそのサイズ基準で拡大縮小できる。
+    const BASE_VIEW_W = 1280;
+    const BASE_VIEW_H = 720;
+    const SCALE_BY_TARGET_SIZE = true;
+    const TARGET_GAME_W = 960;
+    const TARGET_GAME_H = 540;
+    const MIN_RENDER_SCALE = 0.5;
+    const MAX_RENDER_SCALE = 4.0;
+
+    // 実ウィンドウサイズに合わせてキャンバスの内部解像度と表示倍率を更新する。
+    // renderScale  : 実画面へ何倍で描くか
+    // viewWidth/H  : ゲーム世界を何ピクセル分見るかの論理サイズ
+    // renderOffset : 余白が出る場合に中央寄せするための論理座標オフセット
+    let renderScale = 1;
+    let viewWidth = BASE_VIEW_W;
+    let viewHeight = BASE_VIEW_H;
+    let renderOffsetX = 0;
+    let renderOffsetY = 0;
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * devicePixelRatio);
+      canvas.height = Math.floor(rect.height * devicePixelRatio);
+
+      if (SCALE_BY_TARGET_SIZE) {
+        // 指定した論理サイズをベースに、ウィンドウへ収まる最大倍率で拡大縮小するモード。
+        viewWidth = TARGET_GAME_W;
+        viewHeight = TARGET_GAME_H;
+        renderScale = Math.min(rect.width / viewWidth, rect.height / viewHeight);
+        renderScale = Math.max(MIN_RENDER_SCALE, Math.min(MAX_RENDER_SCALE, renderScale));
+      } else {
+        // 従来モード。基準解像度に対して倍率を求め、見える範囲を広げたり狭めたりする。
+        renderScale = Math.min(rect.width / BASE_VIEW_W, rect.height / BASE_VIEW_H);
+        renderScale = Math.max(MIN_RENDER_SCALE, Math.min(MAX_RENDER_SCALE, renderScale));
+        viewWidth = rect.width / renderScale;
+        viewHeight = rect.height / renderScale;
+      }
+
+      // 画面サイズと論理サイズの比率がぴったり一致しない時は、余白を付けて中央寄せする。
+      renderOffsetX = Math.max(0, (rect.width / renderScale - viewWidth) * 0.5);
+      renderOffsetY = Math.max(0, (rect.height / renderScale - viewHeight) * 0.5);
+
+      // 以降の描画は CSS ピクセル基準で行う。実際の拡大率は draw() で毎フレーム適用する。
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    addEventListener('resize', resize);
+    resize();
+
+    // ------------------------------
+    // ゲームバランス調整パラメータ
+    // ------------------------------
+    const TILE = 32;                 // 1マスのピクセルサイズ
+    const CONTACT_INTERVAL = 0.2;    // 接触ダメージの再発生間隔(秒)
+    const FLOOR_HEAL_RATIO = 0.25;   // 階段到達時の回復割合
+    const keys = new Set();
+    const dirs = {
+      ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0],
+      w:[0,-1], s:[0,1], a:[-1,0], d:[1,0],
+      q:[-1,-1], e:[1,-1], z:[-1,1], c:[1,1],
+    };
+
+    addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'r') init();
+      keys.add(e.key);
+      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+    });
+    addEventListener('keyup', e => keys.delete(e.key));
+
+    function rand(a,b){ return a + Math.random() * (b-a); }
+    function randi(a,b){ return Math.floor(rand(a,b+1)); }
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+    function len(x,y){ return Math.hypot(x,y); }
+    function norm(x,y){ const l=Math.hypot(x,y)||1; return {x:x/l,y:y/l}; }
+    function lerp(a,b,t){ return a+(b-a)*t; }
+    function angleTo(x1,y1,x2,y2){ return Math.atan2(y2-y1,x2-x1); }
+    function dot(ax,ay,bx,by){ return ax*bx+ay*by; }
+    function circleRect(cx,cy,r,rx,ry,rw,rh){
+      const nx = clamp(cx, rx, rx+rw), ny = clamp(cy, ry, ry+rh);
+      const dx = cx-nx, dy = cy-ny;
+      return dx*dx+dy*dy <= r*r;
     }
 
-    function getDropInterval() {
-      return 500;
+    let state;
+
+    const floorThemes = [
+      [{wall:'#2c3138', path:'#747d8a'}, {wall:'#222831', path:'#7f8fa6'}],
+      [{wall:'#2f3f56', path:'#788ea4'}, {wall:'#33475b', path:'#6f8ba4'}],
+      [{wall:'#3b2552', path:'#6c5ea7'}, {wall:'#40214f', path:'#8870ad'}],
+      [{wall:'#4f1b39', path:'#8d5b76'}, {wall:'#1e3752', path:'#aa6f8e'}],
+      [{wall:'#26301b', path:'#9b8d49'}, {wall:'#4e1f1f', path:'#b7a35a'}],
+    ];
+
+    function themeForFloor(floor){
+      const band = Math.floor((floor-1)/5) % floorThemes.length;
+      const choices = floorThemes[band];
+      return choices[randi(0, choices.length-1)];
     }
 
-    function createPiece(type) {
+    function showOverlay(text) {
+      overlay.textContent = text;
+      overlay.style.opacity = '1';
+      setTimeout(() => overlay.style.opacity = '0', 900);
+    }
+
+    function createPlayer(){
+      const shape = ['circle','square','triangle','diamond'][randi(0,3)];
       return {
-        type,
-        x: Math.floor(COLS / 2) - 2,
-        y: 0,
-        rotation: 0,
-        holdUsed: false,
-        lockTimer: 0
+        x: 0, y: 0, vx: 0, vy: 0,
+        r: 13,
+        shape,
+        angle: 0,
+        hpMax: 30,
+        hp: 30,
+        attack: 4,
+        defense: 2,
+        mass: 2,
+        accel: 520,
+        maxSpeed: 210,
+        level: 1,
+        xp: 0,
+        xpNext: 12,
+        gold: 0,
+        poisonUntil: 0,
+        poisonTickAt: 0,
+        antidoteMushrooms: 0,
+        lastDamageAt: -999,
+        key: false,
+        sword: {tier:'wood', damage:2, durability:Infinity, max:Infinity, cooldown:0.4, last:-9, permanent:true},
+        bow: {tier:'silver', damage:6, arrows:14, max:14, speed:480, cooldown:0.8, last:-9},
       };
     }
 
-    function getBlocks(piece, x = piece.x, y = piece.y, rotation = piece.rotation) {
-      return SHAPES[piece.type][rotation].map(([bx, by]) => ({ x: x + bx, y: y + by }));
+    function tierColor(t){
+      return t==='wood' ? '#d8c29d' :
+        t==='copper' ? '#8b5a2b' :
+        t==='iron' ? '#6f7f8f' :
+        t==='silver' ? '#d7e0ea' :
+        t==='flame' ? '#d94a3a' :
+        t==='lizard' ? '#9acd32' :
+        t==='gold' ? '#e7c84a' :
+        '#b98048';
     }
 
-    function isValidPosition(board, piece, x = piece.x, y = piece.y, rotation = piece.rotation) {
-      const blocks = getBlocks(piece, x, y, rotation);
-      for (const b of blocks) {
-        if (b.x < 0 || b.x >= COLS || b.y >= TOTAL_ROWS) return false;
-        if (b.y >= 0 && board[b.y][b.x]) return false;
+    function goldValue(e){
+      return Math.max(1, Math.round(
+        e.hpMax*0.25 + e.attack*0.9 + e.defense*0.8 + e.maxSpeed*0.01 + e.accel*0.005 +
+        (e.type==='turret'?2:0) + (e.poison?1:0) + (e.ranged?1:0) + (e.boss?5:0)
+      ));
+    }
+
+    function createDungeon(floor){
+      const w = 46 + floor*3;
+      const h = 34 + floor*2;
+      const tiles = Array.from({length:h},()=>Array(w).fill(1));
+      const objects = [];
+      const rooms = [];
+      const roomCount = 8 + Math.min(10, floor);
+
+      for(let i=0;i<roomCount;i++){
+        const rw = randi(5, 10);
+        const rh = randi(5, 9);
+        const rx = randi(2, w-rw-3);
+        const ry = randi(2, h-rh-3);
+        const room = {x:rx,y:ry,w:rw,h:rh,cx:Math.floor(rx+rw/2),cy:Math.floor(ry+rh/2)};
+        rooms.push(room);
+        for(let y=ry;y<ry+rh;y++) for(let x=rx;x<rx+rw;x++) tiles[y][x]=0;
+        if (i>0){
+          const a = rooms[i-1], b = room;
+          carvePath(tiles, a.cx,a.cy,b.cx,b.cy);
+        }
+      }
+
+      for(let i=0;i<rooms.length-2;i+=2){
+        carvePath(tiles, rooms[i].cx, rooms[i].cy, rooms[i+2].cx, rooms[i+2].cy, true);
+      }
+
+      const startRoom = rooms[0];
+      const stairsRoom = rooms[rooms.length-1];
+      const start = {x:(startRoom.cx+0.5)*TILE, y:(startRoom.cy+0.5)*TILE};
+      const stairs = {x:(stairsRoom.cx+0.5)*TILE, y:(stairsRoom.cy+0.5)*TILE};
+
+      for (const room of rooms.slice(1)) {
+        const count = randi(1, 4);
+        for(let i=0;i<count;i++){
+          const ox = randi(room.x+1, room.x+room.w-2);
+          const oy = randi(room.y+1, room.y+room.h-2);
+          if ((Math.abs(ox-startRoom.cx)+Math.abs(oy-startRoom.cy)<3) || (Math.abs(ox-stairsRoom.cx)+Math.abs(oy-stairsRoom.cy)<3)) continue;
+          if (tiles[oy][ox]===0) {
+            objects.push({
+              x: ox*TILE + TILE*0.1,
+              y: oy*TILE + TILE*0.1,
+              w: TILE*(Math.random()<0.5?0.8:1.4),
+              h: TILE*(Math.random()<0.5?0.8:1.4),
+              breakable: Math.random()<0.28,
+              color: Math.random()<0.28 ? '#8f7048' : '#58616b',
+              hp: 4,
+              alpha:1,
+              dead:false,
+            });
+          }
+        }
+      }
+
+      return {w,h,tiles,objects,rooms,start,stairs,theme:themeForFloor(floor)};
+    }
+
+    function carvePath(tiles,x1,y1,x2,y2,diag=false){
+      let x=x1,y=y1;
+      tiles[y][x]=0;
+      while(x!==x2||y!==y2){
+        if (diag && Math.random()<0.55) {
+          if (x<x2) x++; else if (x>x2) x--;
+          if (y<y2) y++; else if (y>y2) y--;
+        } else if (Math.random()<0.5) {
+          if (x<x2) x++; else if (x>x2) x--;
+          else if (y<y2) y++; else if (y>y2) y--;
+        } else {
+          if (y<y2) y++; else if (y>y2) y--;
+          else if (x<x2) x++; else if (x>x2) x--;
+        }
+        for(let oy=-1;oy<=1;oy++) for(let ox=-1;ox<=1;ox++){
+          const tx=x+ox, ty=y+oy;
+          if (tiles[ty] && tiles[ty][tx] !== undefined && Math.random()<0.74) tiles[ty][tx]=0;
+        }
+      }
+    }
+
+    // フロア生成後の実体配置。
+    // 敵、飛び道具、アイテム、巣をここで初期化する。
+    function spawnFloor(state){
+      state.dungeon = createDungeon(state.floor);
+      const p = state.player;
+      p.x = state.dungeon.start.x;
+      p.y = state.dungeon.start.y;
+      p.vx = p.vy = 0;
+      p.key = false;
+      const enemies = [];
+      const projectiles = [];
+      const pickups = [];
+      const spawners = [];
+      const rooms = state.dungeon.rooms;
+
+      function addEnemy(room, typeOverride) {
+        const types = ['melee','tank','poisoner','charger','ranged','turret'];
+        const type = typeOverride || types[randi(0, Math.min(types.length-1, 1 + Math.floor(state.floor/2)))];
+        const x = (room.cx + rand(-room.w/3, room.w/3))*TILE;
+        const y = (room.cy + rand(-room.h/3, room.h/3))*TILE;
+        enemies.push(makeEnemy(type,x,y,state.floor));
+      }
+
+      for(const room of rooms.slice(1,-1)){
+        const c = randi(1, 2 + Math.floor(state.floor/3));
+        for(let i=0;i<c;i++) addEnemy(room);
+        if (Math.random()<0.2 + state.floor*0.015) {
+          spawners.push({
+            x:room.cx*TILE,
+            y:room.cy*TILE,
+            r:18,
+            hp:16,
+            maxHp:16,
+            defense:1,
+            // 巣が敵を吐き出す間隔。小さいほど高圧。
+            spawnEvery:Math.max(2.8, 5.2 - state.floor*0.12),
+            last:0,
+            dead:false,
+            // 1回のスポーンでまとめて出現する数。
+            burst:2 + Math.floor(state.floor/4)
+          });
+        }
+      }
+
+      enemies.push(makeEnemy('boss', state.dungeon.stairs.x - TILE*2, state.dungeon.stairs.y, state.floor));
+
+      state.enemies = enemies;
+      state.projectiles = projectiles;
+      state.pickups = pickups;
+      state.spawners = spawners;
+      state.swordSwing = null;
+      addFloorTransition();
+      playSfx('floor');
+      showOverlay('Floor ' + state.floor);
+    }
+
+    function makeEnemy(type,x,y,floor){
+      const bossShapes = ['hex','circle','diamond','triangle'];
+      const base = {
+        type, x,y,vx:0,vy:0,angle:0,lastContact:0,lastShot:0,
+        damageFlash:0, dead:false, deathAnim:0, ai:['chase','intercept','erratic','flee'][randi(0,3)],
+        hpBarVisible:false,
+      };
+      if (type==='melee') Object.assign(base,{shape:'circle',color:'#d34545',r:14,hpMax:6+floor, hp:6+floor, attack:(3+floor*0.1)*2, defense:0, mass:1, accel:420, maxSpeed:140});
+      if (type==='tank') Object.assign(base,{shape:'square',color:'#4f7bd9',r:18,hpMax:10+floor*1.4,hp:10+floor*1.4,attack:(2+floor*0.1)*2,defense:2,mass:3,accel:240,maxSpeed:90});
+      if (type==='poisoner') Object.assign(base,{shape:'circle',color:'#2cbf65',r:14,hpMax:8+floor,hp:8+floor,attack:4,defense:1,mass:1.2,accel:300,maxSpeed:120,poison:true});
+      if (type==='charger') Object.assign(base,{shape:'triangle',color:'#e0c13f',r:13,hpMax:7+floor,hp:7+floor,attack:6,defense:0,mass:1,accel:520,maxSpeed:180});
+      if (type==='ranged') Object.assign(base,{shape:'diamond',color:'#9b5de5',r:15,hpMax:8+floor,hp:8+floor,attack:4,defense:0,mass:1,accel:260,maxSpeed:100,ranged:true,shotEvery:1.6});
+      if (type==='turret') Object.assign(base,{shape:'square',color:'#d14949',r:17,hpMax:9+floor,hp:9+floor,attack:6,defense:1,mass:999,accel:0,maxSpeed:0,turret:true,shotEvery:1.2,targeting:Math.random()<0.5?'direct':'fixed',fixedAngle:rand(0,Math.PI*2)});
+      if (type==='boss') Object.assign(base,{shape:bossShapes[randi(0,bossShapes.length-1)],color:['#f06d4f','#db7d4e','#e14f4f','#cc8a3f'][randi(0,3)],r:30,hpMax:24+floor*3,hp:24+floor*3,attack:(5+floor*0.2)*2,defense:3,mass:6,accel:220,maxSpeed:95,boss:true,ranged:true,shotEvery:1.4,pattern:true});
+      base.gold = goldValue(base);
+      return base;
+    }
+
+    function init(){
+      state = {
+        floor: 1,
+        t: 0,
+        player: createPlayer(),
+        dungeon: null,
+        enemies: [],
+        projectiles: [],
+        pickups: [],
+        spawners: [],
+        swordSwing: null,
+        effects: [],
+        gameOver: false,
+        floorChangingUntil: 0,
+      };
+      spawnFloor(state);
+    }
+
+    function canMoveCircle(x,y,r){
+      const d = state.dungeon;
+      const minX = Math.floor((x-r)/TILE)-1, maxX = Math.floor((x+r)/TILE)+1;
+      const minY = Math.floor((y-r)/TILE)-1, maxY = Math.floor((y+r)/TILE)+1;
+      for(let ty=minY;ty<=maxY;ty++) for(let tx=minX;tx<=maxX;tx++){
+        if (!d.tiles[ty] || d.tiles[ty][tx]===undefined || d.tiles[ty][tx]===1) {
+          if (circleRect(x,y,r,tx*TILE,ty*TILE,TILE,TILE)) return false;
+        }
+      }
+      for (const o of d.objects) {
+        if (!o.dead && circleRect(x,y,r,o.x,o.y,o.w,o.h)) return false;
       }
       return true;
     }
 
-    function mergePiece(board, piece) {
-      for (const b of getBlocks(piece)) {
-        if (b.y >= 0) board[b.y][b.x] = piece.type;
+    function moveBody(body, dt) {
+      const nx = body.x + body.vx*dt;
+      if (canMoveCircle(nx, body.y, body.r)) body.x = nx; else body.vx *= -0.18;
+      const ny = body.y + body.vy*dt;
+      if (canMoveCircle(body.x, ny, body.r)) body.y = ny; else body.vy *= -0.18;
+    }
+
+    function inputDir(){
+      let x=0,y=0;
+      for(const k of keys){
+        const d = dirs[k] || dirs[k.toLowerCase()];
+        if (d){ x += d[0]; y += d[1]; }
       }
+      if (!x && !y) return {x:0,y:0};
+      return norm(x,y);
     }
 
-    function findFullLines(board) {
-      const rows = [];
-      for (let y = 0; y < TOTAL_ROWS; y++) {
-        if (board[y].every(Boolean)) rows.push(y);
+    // 毎フレームのメイン更新。
+    // 入力、移動、毒、攻撃、敵AI、巣、飛び道具、死亡処理までここで進める。
+    function update(dt){
+      if (state.gameOver) return;
+      state.t += dt;
+      // フロア遷移中は大半のロジックを止めて演出優先にする。
+      if (state.floorChangingUntil > state.t) {
+        updateEffects(dt);
+        uiUpdate();
+        return;
       }
-      return rows;
-    }
-
-    function clearLines(board, rowsToClear) {
-      if (!rowsToClear.length) return 0;
-      const clearSet = new Set(rowsToClear);
-      const remain = board.filter((_, y) => !clearSet.has(y));
-      const newRows = Array.from({ length: rowsToClear.length }, () => Array(COLS).fill(null));
-      board.length = 0;
-      board.push(...newRows, ...remain);
-      return rowsToClear.length;
-    }
-
-    function getGhostY(board, piece) {
-      let y = piece.y;
-      while (isValidPosition(board, piece, piece.x, y + 1, piece.rotation)) y++;
-      return y;
-    }
-
-    function isGrounded(board, piece) {
-      return !isValidPosition(board, piece, piece.x, piece.y + 1, piece.rotation);
-    }
-
-    function updateHUD() {
-      scoreEl.textContent = game.score.toLocaleString('ja-JP');
-      levelEl.textContent = game.level;
-      linesEl.textContent = game.totalLines;
-      paintMini(holdEl, game.hold);
-    }
-
-    function showOverlay(title, text, { start = false, resume = false } = {}) {
-      overlayTitleEl.textContent = title;
-      overlayTextEl.textContent = text;
-      startBtn.style.display = start ? 'inline-block' : 'none';
-      resumeBtn.style.display = resume ? 'inline-block' : 'none';
-      overlayEl.classList.add('show');
-    }
-
-    function hideOverlay() {
-      overlayEl.classList.remove('show');
-    }
-
-    function fillQueue() {
-      while (game.nextQueue.length < 7) {
-        if (game.bag.length === 0) game.bag = newBag();
-        game.nextQueue.push(game.bag.shift());
+      const p = state.player;
+      const idir = inputDir();
+      p.vx += idir.x * p.accel * dt;
+      p.vy += idir.y * p.accel * dt;
+      const drag = idir.x||idir.y ? 0.96 : 0.90;
+      p.vx *= drag;
+      p.vy *= drag;
+      const speed2 = len(p.vx,p.vy);
+      if (speed2 > p.maxSpeed) {
+        const n = norm(p.vx,p.vy);
+        p.vx = n.x*p.maxSpeed;
+        p.vy = n.y*p.maxSpeed;
       }
-    }
+      if (Math.abs(p.vx)+Math.abs(p.vy)>5) p.angle = Math.atan2(p.vy,p.vx);
+      moveBody(p, dt);
 
-    function spawnPiece() {
-      fillQueue();
-      const type = game.nextQueue.shift();
-      game.piece = createPiece(type);
-      fillQueue();
-      if (!isValidPosition(game.board, game.piece)) {
-        game.state = 'gameover';
-        pauseBtn.textContent = 'Pause';
-        showOverlay('GAME OVER', `Score: ${game.score}\nStartで再スタート`, { start: true });
+      if (state.t < p.poisonUntil && state.t >= p.poisonTickAt){
+        p.hp = Math.max(0, p.hp - 1);
+        p.poisonTickAt = state.t + 1.0;
+        p.lastDamageAt = state.t;
       }
-      updateHUD();
+      if (state.t - p.lastDamageAt > 2 && !isNearCombat()) {
+        if (!p.lastRegen || state.t - p.lastRegen > 5){
+          p.hp = Math.min(p.hpMax, p.hp + 1);
+          p.lastRegen = state.t;
+        }
+      }
+
+      // 剣攻撃。攻撃判定そのものは performSwordAttack / handleSwordSwing 側で処理。
+      if ((keys.has('j') || keys.has('J')) && p.sword && state.t - p.sword.last > p.sword.cooldown && (p.sword.permanent || p.sword.durability > 0)) {
+        p.sword.last = state.t;
+        performSwordAttack();
+        playSfx('sword');
+      }
+      // 弓攻撃。弾を1発生成し、残弾を消費。
+      if ((keys.has('k') || keys.has('K')) && p.bow && state.t - p.bow.last > p.bow.cooldown && p.bow.arrows > 0) {
+        p.bow.last = state.t;
+        p.bow.arrows--;
+        // プレイヤー正面方向に細長い当たり判定を出す。
+      const dir = {x:Math.cos(p.angle), y:Math.sin(p.angle)};
+        state.projectiles.push({
+          from:'player', x:p.x+dir.x*18, y:p.y+dir.y*18, vx:dir.x*p.bow.speed, vy:dir.y*p.bow.speed,
+          r:4, damage:p.bow.damage, life:2.4, color:tierColor(p.bow.tier)
+        });
+        if (p.bow.arrows <= 0) p.bow = null;
+        playSfx('bow');
+      }
+      // 毒消しキノコ。毒状態を即解除。
+      if ((keys.has('l') || keys.has('L')) && p.antidoteMushrooms > 0 && state.t - (p.lastMushroomUse || -99) > 0.25) {
+        p.lastMushroomUse = state.t;
+        p.antidoteMushrooms--;
+        p.poisonUntil = 0;
+        p.poisonTickAt = 0;
+        playSfx('mushroom');
+      }
+
+      for(const e of state.enemies){
+        if (e.dead) continue;
+        e.damageFlash = Math.max(0, e.damageFlash - dt*4);
+        const d = dist(e,p);
+        if (e.turret) {
+          if (e.targeting === 'direct') e.angle = angleTo(e.x,e.y,p.x,p.y); else e.angle = e.fixedAngle;
+          if (state.t - e.lastShot > e.shotEvery && d < 500) {
+            e.lastShot = state.t;
+            const dir = {x:Math.cos(e.angle), y:Math.sin(e.angle)};
+            state.projectiles.push({from:'enemy', x:e.x+dir.x*18, y:e.y+dir.y*18, vx:dir.x*220, vy:dir.y*220, r:7, damage:2, life:4, color:'#ff9b6a', poison:false});
+          }
+          continue;
+        }
+        let target = {x:p.x, y:p.y};
+        if (e.ai==='intercept') target = {x:p.x+p.vx*0.5, y:p.y+p.vy*0.5};
+        if (e.ai==='erratic') target = {x:p.x+Math.cos(state.t*2+e.x)*80, y:p.y+Math.sin(state.t*1.7+e.y)*80};
+        if (e.ai==='flee' && d<180) target = {x:e.x-(p.x-e.x), y:e.y-(p.y-e.y)};
+
+        let dir = norm(target.x-e.x, target.y-e.y);
+        if (e.ranged && !e.boss && d<180) dir = norm(e.x-p.x,e.y-p.y);
+        e.vx += dir.x*e.accel*dt;
+        e.vy += dir.y*e.accel*dt;
+        e.vx *= 0.93; e.vy *= 0.93;
+        const sp = len(e.vx,e.vy);
+        if (sp > e.maxSpeed) {
+          const n = norm(e.vx,e.vy);
+          e.vx = n.x*e.maxSpeed; e.vy = n.y*e.maxSpeed;
+        }
+        if (sp>3) e.angle = Math.atan2(e.vy,e.vx);
+        moveBody(e, dt);
+
+        if (e.ranged && state.t - e.lastShot > e.shotEvery && d < (e.boss?380:300)) {
+          e.lastShot = state.t;
+          const shotAngle = angleTo(e.x,e.y,p.x,p.y);
+          const v = e.boss ? 260 : 230;
+          state.projectiles.push({from:'enemy', x:e.x+Math.cos(shotAngle)*16, y:e.y+Math.sin(shotAngle)*16, vx:Math.cos(shotAngle)*v, vy:Math.sin(shotAngle)*v, r:e.boss?7:5, damage:e.boss?3:1, life:3, color:e.color, poison:e.type==='poisoner'});
+        }
+      }
+
+      // 巣のスポーン処理。近くに敵が多すぎる場合は増援を抑制する。
+      for (const s of state.spawners) {
+        if (s.dead) continue;
+        if (!s.last) s.last = state.t;
+        if (state.t - s.last > s.spawnEvery) {
+          s.last = state.t;
+          const near = state.enemies.filter(e => !e.dead && dist(e,s)<150).length;
+          const cap = 5 + Math.floor(state.floor / 2);
+          if (near < cap) {
+            const burst = Math.min(s.burst || 2, cap - near);
+            for (let i = 0; i < burst; i++) {
+              state.enemies.push(makeEnemy(['melee','poisoner','charger','ranged'][randi(0,3)], s.x+rand(-28,28), s.y+rand(-28,28), state.floor));
+            }
+            addPastelExplosion(s.x, s.y, 0.85);
+          }
+        }
+      }
+
+      // 飛び道具
+      for (const pr of state.projectiles) {
+        pr.life -= dt;
+        pr.x += pr.vx*dt;
+        pr.y += pr.vy*dt;
+        if (!canMoveCircle(pr.x, pr.y, pr.r)) { addPastelExplosion(pr.x, pr.y, 0.9); pr.life = -1; }
+      }
+      state.projectiles = state.projectiles.filter(p=>p.life>0);
+      updateEffects(dt);
+
+      handleContacts();
+      handleSwordSwing();
+      handleProjectiles();
+      handlePickups();
+      updateDeaths(dt);
+      checkStairs();
+      if (p.hp <= 0) {
+        state.gameOver = true;
+        addPastelExplosion(p.x, p.y, 2.1);
+        showOverlay('GAME OVER');
+      }
+      uiUpdate();
     }
 
-    function startGame() {
-      game = {
-        board: makeEmptyBoard(),
-        piece: null,
-        hold: null,
-        nextQueue: [],
-        bag: [],
-        score: 0,
-        level: 1,
-        totalLines: 0,
-        combo: -1,
-        state: 'playing',
-        fallTimer: 0,
-        moveLeft: false,
-        moveRight: false,
-        dasLeft: 0,
-        dasRight: 0,
-        arrLeft: 0,
-        arrRight: 0,
-        lastHorizontalActionTime: 0,
-        lockDelayMs: 500,
-        lockExtendGraceMs: 140,
-        clearAnimationRows: [],
-        clearAnimationTimer: 0
+    function isNearCombat(){
+      const p = state.player;
+      return state.enemies.some(e => !e.dead && dist(e,p) < 110);
+    }
+
+    // 剣の振り始めを記録する。
+    // 実際の当たり判定は短時間だけ前方に伸びる線分として扱う。
+    function performSwordAttack(){
+      state.swordSwing = {
+        start: state.t,
+        duration: 0.18,
+        hitSet: new Set(),
       };
-      pauseBtn.textContent = 'Pause';
-      spawnPiece();
-      hideOverlay();
-      updateHUD();
-      clearSelection();
     }
 
-    function lockPiece() {
-      mergePiece(game.board, game.piece);
-      const fullRows = findFullLines(game.board);
-      if (fullRows.length > 0) {
-        game.state = 'lineClearing';
-        game.clearAnimationRows = fullRows;
-        game.clearAnimationTimer = 160;
-        return;
-      }
-      game.combo = -1;
-      spawnPiece();
-    }
-
-    function movePiece(dx) {
-      if (game.state !== 'playing') return false;
-      if (isValidPosition(game.board, game.piece, game.piece.x + dx, game.piece.y, game.piece.rotation)) {
-        game.piece.x += dx;
-        game.lastHorizontalActionTime = performance.now();
-        return true;
-      }
-      return false;
-    }
-
-    function rotatePiece(dir) {
-      if (game.state !== 'playing') return;
-      const from = game.piece.rotation;
-      const to = (from + dir + 4) % 4;
-      const key = `${from}>${to}`;
-      const kicks = game.piece.type === 'O'
-        ? [[0,0]]
-        : (game.piece.type === 'I' ? I_KICKS[key] : JLSTZ_KICKS[key]);
-
-      for (const [kx, ky] of (kicks || [[0,0]])) {
-        const nx = game.piece.x + kx;
-        const ny = game.piece.y - ky;
-        if (isValidPosition(game.board, game.piece, nx, ny, to)) {
-          game.piece.x = nx;
-          game.piece.y = ny;
-          game.piece.rotation = to;
-          return;
-        }
-      }
-    }
-
-    function hardDrop() {
-      if (game.state !== 'playing') return;
-      const ghostY = getGhostY(game.board, game.piece);
-      const distance = ghostY - game.piece.y;
-      game.piece.y = ghostY;
-      game.score += distance * 2;
-      updateHUD();
-      lockPiece();
-    }
-
-    function holdPiece() {
-      if (game.state !== 'playing') return;
-      if (game.piece.holdUsed) return;
-
-      const current = game.piece.type;
-      if (game.hold == null) {
-        game.hold = current;
-        spawnPiece();
-      } else {
-        const swap = game.hold;
-        game.hold = current;
-        game.piece = createPiece(swap);
-        if (!isValidPosition(game.board, game.piece)) {
-          game.state = 'gameover';
-          pauseBtn.textContent = 'Pause';
-          showOverlay('GAME OVER', `Score: ${game.score}\nStartで再スタート`, { start: true });
-          return;
-        }
-      }
-
-      game.piece.holdUsed = true;
-      updateHUD();
-    }
-
-    function setPause(paused) {
-      if (!game || game.state === 'gameover') return;
-      game.state = paused ? 'paused' : 'playing';
-      pauseBtn.textContent = paused ? 'Resume' : 'Pause';
-
-      if (paused) {
-        showOverlay('PAUSED', 'Resumeで再開\n盤面タップでも再開', { resume: true });
-      } else {
-        hideOverlay();
-      }
-      clearSelection();
-    }
-
-    function handleAutoShift(dt) {
-      const DAS = 150;
-      const ARR = 50;
-
-      if (game.moveLeft && !game.moveRight) {
-        game.dasLeft += dt;
-        if (game.dasLeft >= DAS) {
-          game.arrLeft += dt;
-          while (game.arrLeft >= ARR) {
-            movePiece(-1);
-            game.arrLeft -= ARR;
-          }
-        }
-      } else {
-        game.dasLeft = 0;
-        game.arrLeft = 0;
-      }
-
-      if (game.moveRight && !game.moveLeft) {
-        game.dasRight += dt;
-        if (game.dasRight >= DAS) {
-          game.arrRight += dt;
-          while (game.arrRight >= ARR) {
-            movePiece(1);
-            game.arrRight -= ARR;
-          }
-        }
-      } else {
-        game.dasRight = 0;
-        game.arrRight = 0;
-      }
-    }
-
-    function stepGame(dt) {
-      if (!game) return;
-
-      if (game.state === 'lineClearing') {
-        game.clearAnimationTimer -= dt;
-        if (game.clearAnimationTimer <= 0) {
-          const cleared = clearLines(game.board, game.clearAnimationRows);
-          if (cleared > 0) {
-            game.totalLines += cleared;
-            game.combo++;
-            const base = SCORE_TABLE[cleared] || 0;
-            game.score += base * game.level;
-            if (game.combo > 0) game.score += 50 * game.combo * game.level;
-          }
-          game.level = Math.floor(game.totalLines / 10) + 1;
-          game.clearAnimationRows = [];
-          game.state = 'playing';
-          spawnPiece();
-        }
-        updateHUD();
+    function handleSwordSwing(){
+      const swing = state.swordSwing;
+      if (!swing || !state.player.sword) return;
+      const p = state.player;
+      const elapsed = state.t - swing.start;
+      if (elapsed > swing.duration) {
+        state.swordSwing = null;
         return;
       }
 
-      if (game.state !== 'playing') return;
-
-      handleAutoShift(dt);
-
-      game.fallTimer += dt;
-      const dropInterval = getDropInterval();
-
-      while (game.fallTimer >= dropInterval) {
-        game.fallTimer -= dropInterval;
-        if (isValidPosition(game.board, game.piece, game.piece.x, game.piece.y + 1, game.piece.rotation)) {
-          game.piece.y += 1;
-        } else {
+      // プレイヤー正面方向に細長い当たり判定を出す。
+      const dir = {x:Math.cos(p.angle), y:Math.sin(p.angle)};
+      const half = swing.duration / 2;
+      const ratio = elapsed < half ? (elapsed / half) : (1 - (elapsed - half) / half);
+      let reach = 12 + 72 * clamp(ratio, 0, 1);
+      const wallStep = 6;
+      for (let d = 12; d <= reach; d += wallStep) {
+        const tx = p.x + dir.x * d;
+        const ty = p.y + dir.y * d;
+        if (!canMoveCircle(tx, ty, 4)) {
+          reach = Math.max(12, d - wallStep);
           break;
         }
       }
+      const thickness = 10;
 
-      if (isGrounded(game.board, game.piece)) {
-        const now = performance.now();
-        const recentlyMoved = (now - game.lastHorizontalActionTime) <= game.lockExtendGraceMs;
-        if (recentlyMoved || game.moveLeft || game.moveRight) {
-          game.piece.lockTimer = 0;
-        } else {
-          game.piece.lockTimer += dt;
-          if (game.piece.lockTimer >= game.lockDelayMs) lockPiece();
+      for(const e of state.enemies){
+        if (e.dead) continue;
+        const vx = e.x - p.x, vy = e.y - p.y;
+        const proj = dot(vx,vy,dir.x,dir.y);
+        const perp = Math.abs(vx*dir.y - vy*dir.x);
+        if (proj > 0 && proj < reach && perp < thickness + e.r) {
+          const key = `e:${state.enemies.indexOf(e)}:${Math.floor(elapsed/0.045)}`;
+          if (!swing.hitSet.has(key)) {
+            swing.hitSet.add(key);
+            damageEnemyBySword(e, p.sword ? p.sword.damage : 1);
+          }
         }
-      } else {
-        game.piece.lockTimer = 0;
+      }
+      // 巣のスポーン処理。近くに敵が多すぎる場合は増援を抑制する。
+      for (const s of state.spawners) {
+        if (s.dead) continue;
+        const vx = s.x - p.x, vy = s.y - p.y;
+        const proj = dot(vx,vy,dir.x,dir.y);
+        const perp = Math.abs(vx*dir.y - vy*dir.x);
+        if (proj > 0 && proj < reach && perp < thickness + s.r) {
+          const key = `s:${state.spawners.indexOf(s)}:${Math.floor(elapsed/0.045)}`;
+          if (!swing.hitSet.has(key)) {
+            swing.hitSet.add(key);
+            if (state.player.sword && !state.player.sword.permanent) {
+              state.player.sword.durability--;
+              if (state.player.sword.durability <= 0) state.player.sword = makeWeapon('sword', 'wood');
+            }
+            s.hp -= (state.player.sword ? state.player.sword.damage : 1);
+            if (s.hp <= 0) s.dead = true;
+          }
+        }
+      }
+      for (const o of state.dungeon.objects) {
+        if (!o.breakable || o.dead) continue;
+        const cx = o.x+o.w/2, cy=o.y+o.h/2;
+        const vx = cx-p.x, vy = cy-p.y;
+        const proj = dot(vx,vy,dir.x,dir.y);
+        const perp = Math.abs(vx*dir.y - vy*dir.x);
+        if (proj > 0 && proj < reach && perp < thickness + Math.max(o.w,o.h)/2) {
+          const key = `o:${state.dungeon.objects.indexOf(o)}:${Math.floor(elapsed/0.045)}`;
+          if (!swing.hitSet.has(key)) {
+            swing.hitSet.add(key);
+            if (state.player.sword && !state.player.sword.permanent) {
+              state.player.sword.durability--;
+              if (state.player.sword.durability <= 0) state.player.sword = makeWeapon('sword', 'wood');
+            }
+            o.hp -= (state.player.sword ? state.player.sword.damage : 1);
+            if (o.hp <= 0) o.dead = true;
+          }
+        }
+      }
+    }
+
+    function isInFront(player, enemy){
+      const dir = norm(Math.cos(player.angle), Math.sin(player.angle));
+      const v = norm(enemy.x-player.x, enemy.y-player.y);
+      const c = clamp(dot(dir.x,dir.y,v.x,v.y),-1,1);
+      return Math.acos(c) <= Math.PI/4;
+    }
+
+    function handleContacts(){
+      const p = state.player;
+      for(const e of state.enemies){
+        if (e.dead) continue;
+        if (dist(p,e) < p.r + e.r) {
+          const now = state.t;
+          if (!e.lastContact || now - e.lastContact >= CONTACT_INTERVAL) {
+            e.lastContact = now;
+            const front = isInFront(p,e);
+            const pAtk = p.attack + (front?1:0);
+            const pDef = p.defense + (front?1:0);
+            const dToEnemy = Math.max(1, Math.floor(pAtk - e.defense));
+            const dToPlayer = Math.max(1, Math.floor(e.attack - pDef));
+            damageEnemy(e, dToEnemy);
+            damagePlayer(dToPlayer, e.poison ? rand(5,20) : 0);
+          }
+          const n = norm(e.x-p.x, e.y-p.y);
+          p.vx -= n.x*8; p.vy -= n.y*8;
+          e.vx += n.x*8; e.vy += n.y*8;
+        }
       }
 
-      updateHUD();
+      for (let i = 0; i < state.enemies.length; i++) {
+        const a = state.enemies[i];
+        if (!a || a.dead) continue;
+        for (let j = i + 1; j < state.enemies.length; j++) {
+          const b = state.enemies[j];
+          if (!b || b.dead) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.0001;
+          const minDist = a.r + b.r;
+          if (d < minDist) {
+            const overlap = minDist - d;
+            const nx = dx / d;
+            const ny = dy / d;
+            const totalMass = (a.mass || 1) + (b.mass || 1);
+            const pushA = (b.mass || 1) / totalMass;
+            const pushB = (a.mass || 1) / totalMass;
+            a.x -= nx * overlap * 0.5 * pushA;
+            a.y -= ny * overlap * 0.5 * pushA;
+            b.x += nx * overlap * 0.5 * pushB;
+            b.y += ny * overlap * 0.5 * pushB;
+            a.vx -= nx * 6 * pushA;
+            a.vy -= ny * 6 * pushA;
+            b.vx += nx * 6 * pushB;
+            b.vy += ny * 6 * pushB;
+          }
+        }
+      }
+
+      // 巣のスポーン処理。近くに敵が多すぎる場合は増援を抑制する。
+      for (const s of state.spawners) {
+        if (s.dead) continue;
+        if (dist(p,s) < p.r + s.r) {
+          if (!s.lastContact || state.t - s.lastContact >= CONTACT_INTERVAL) {
+            s.lastContact = state.t;
+            s.hp -= Math.max(1, p.attack - s.defense);
+            damagePlayer(1,0);
+            if (s.hp <= 0) s.dead = true;
+          }
+        }
+      }
     }
 
-    function drawCell(x, y, color, alpha = 1) {
-      const px = x * BLOCK;
-      const py = (y - HIDDEN_ROWS) * BLOCK;
-      if (py < 0) return;
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = color;
-      ctx.fillRect(px + 1, py + 1, BLOCK - 2, BLOCK - 2);
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px + 0.5, py + 0.5, BLOCK - 1, BLOCK - 1);
-      ctx.restore();
-    }
-
-    function drawBoard() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let y = HIDDEN_ROWS; y < TOTAL_ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-          ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-          ctx.strokeRect(x * BLOCK, (y - HIDDEN_ROWS) * BLOCK, BLOCK, BLOCK);
-          const cell = game?.board?.[y]?.[x];
-          if (cell) {
-            if (game?.state === 'lineClearing' && game.clearAnimationRows.includes(y)) {
-              drawCell(x, y, '#ff0000', 1);
-            } else {
-              drawCell(x, y, COLORS[cell], 1);
+    function handleProjectiles(){
+      const p = state.player;
+      for(const pr of state.projectiles){
+        if (pr.from==='enemy') {
+          if (dist(pr,p) < pr.r + p.r) {
+            damagePlayer(pr.damage, pr.poison ? rand(5,20) : 0);
+            addPastelExplosion(pr.x, pr.y, 1.0);
+            pr.life = -1;
+          }
+        } else {
+          for(const e of state.enemies){
+            if (!e.dead && dist(pr,e) < pr.r + e.r) {
+              damageEnemy(e, pr.damage);
+              addPastelExplosion(pr.x, pr.y, 1.15);
+              pr.life = -1;
+              break;
+            }
+          }
+          // 巣のスポーン処理。近くに敵が多すぎる場合は増援を抑制する。
+      for (const s of state.spawners) {
+            if (!s.dead && dist(pr,s) < pr.r + s.r) {
+              s.hp -= pr.damage;
+              addPastelExplosion(pr.x, pr.y, 1.05);
+              pr.life = -1;
+              if (s.hp <= 0) s.dead = true;
             }
           }
         }
       }
+    }
 
-      if (!game || !game.piece || game.state === 'lineClearing') return;
-
-      const ghostY = getGhostY(game.board, game.piece);
-      const ghostAlpha = { O: 0.75, S: 0.55, I: 0.35, J: 0.35, L: 0.35, T: 0.35, Z: 0.35 }[game.piece.type] ?? 0.3;
-
-      for (const b of getBlocks(game.piece, game.piece.x, ghostY, game.piece.rotation)) {
-        drawCell(b.x, b.y, COLORS[game.piece.type], ghostAlpha);
-      }
-
-      for (const b of getBlocks(game.piece)) {
-        drawCell(b.x, b.y, COLORS[game.piece.type], 1);
+    function damageEnemy(e, dmg){
+      e.hp -= dmg;
+      e.damageFlash = 1;
+      e.hpBarVisible = true;
+      if (e.hp <= 0 && !e.dead){
+        e.dead = true;
+        e.deathAnim = 0.5;
+        addPastelExplosion(e.x, e.y, e.boss ? 1.8 : 1.35);
+        state.player.gold += e.gold;
+        state.player.xp += e.gold;
+        if (e.boss) {
+          state.player.key = true;
+          showOverlay('鍵を入手');
+          playSfx('level');
+        }
+        maybeDropWeapon(e.x,e.y);
+        checkLevelUp();
       }
     }
 
-    function loop(ts) {
-      if (!lastTime) lastTime = ts;
-      const delta = Math.min(50, ts - lastTime);
-      lastTime = ts;
-      accumulator += delta;
+    function damageEnemyBySword(e, dmg){
+      damageEnemy(e, dmg);
+      const p = state.player;
+      if (p.sword && !p.sword.permanent) {
+        p.sword.durability--;
+        if (p.sword.durability <= 0) p.sword = makeWeapon('sword', 'wood');
+      }
+    }
 
-      while (accumulator >= STEP) {
-        stepGame(STEP);
-        accumulator -= STEP;
+    function damagePlayer(dmg, poisonSec){
+      const p = state.player;
+      p.hp -= dmg;
+      p.lastDamageAt = state.t;
+      playSfx('damage');
+      if (poisonSec > 0) {
+        p.poisonUntil = Math.max(p.poisonUntil, state.t + poisonSec);
+        p.poisonTickAt = Math.min(p.poisonTickAt || Infinity, state.t + 1);
+      }
+    }
+
+    function maybeDropWeapon(x,y){
+      if (Math.random() < 0.18) {
+        const kind = Math.random() < 0.5 ? 'sword' : 'bow';
+        const swordTiers = ['copper','iron','silver','flame','lizard','gold'];
+        const bowTiers = ['copper','silver','gold'];
+        const tier = kind === 'sword'
+          ? swordTiers[randi(0, swordTiers.length-1)]
+          : bowTiers[randi(0, bowTiers.length-1)];
+        state.pickups.push({x,y,kind,tier,r:8});
+      }
+      if (Math.random() < 0.12) state.pickups.push({x,y,kind:'heal',r:8});
+      if (Math.random() < 0.08) state.pickups.push({x,y,kind:'antidote',r:8});
+      if (Math.random() < 0.08) state.pickups.push({x,y,kind:'mushroom',r:8});
+    }
+
+    function makeWeapon(kind, tier){
+      const t = tier;
+      if (kind==='sword') {
+        const map = {
+          wood:{damage:2,durability:Infinity,cooldown:0.4,permanent:true},
+          copper:{damage:4,durability:40,cooldown:0.45,permanent:false},
+          iron:{damage:6,durability:52,cooldown:0.43,permanent:false},
+          silver:{damage:8,durability:70,cooldown:0.4,permanent:false},
+          flame:{damage:12,durability:84,cooldown:0.38,permanent:false},
+          lizard:{damage:14,durability:98,cooldown:0.37,permanent:false},
+          gold:{damage:16,durability:120,cooldown:0.35,permanent:false}
+        };
+        return {tier:t, ...map[t], max:map[t].durability, last:-9};
+      }
+      const map = {copper:{damage:3,arrows:8,speed:430,cooldown:0.9}, silver:{damage:6,arrows:14,speed:480,cooldown:0.8}, gold:{damage:12,arrows:24,speed:530,cooldown:0.65}};
+      return {tier:t, ...map[t], max:map[t].arrows, last:-9};
+    }
+
+    function handlePickups(){
+      const p = state.player;
+      for (const item of state.pickups) {
+        if (item.dead) continue;
+        if (dist(item,p) < p.r + item.r + 6) {
+          item.dead = true;
+          if (item.kind==='heal') p.hp = Math.min(p.hpMax, p.hp + 5);
+          if (item.kind==='antidote') p.poisonUntil = 0;
+          if (item.kind==='mushroom') p.antidoteMushrooms++;
+          if (item.kind==='sword') p.sword = makeWeapon('sword', item.tier);
+          if (item.kind==='bow') p.bow = makeWeapon('bow', item.tier);
+          playSfx('pickup');
+        }
+      }
+      state.pickups = state.pickups.filter(i=>!i.dead);
+    }
+
+    function checkLevelUp(){
+      const p = state.player;
+      while (p.xp >= p.xpNext) {
+        p.xp -= p.xpNext;
+        p.level++;
+        p.xpNext = Math.floor(p.xpNext * 1.3 + 4);
+        p.hpMax += 4;
+        p.attack += 1;
+        p.defense += 1;
+        p.hp = Math.min(p.hpMax, p.hp + Math.ceil(p.hpMax*0.2));
+        showOverlay('LEVEL UP');
+        playSfx('level');
+      }
+    }
+
+    function updateDeaths(dt){
+      for (const e of state.enemies) if (e.dead) e.deathAnim -= dt;
+      state.enemies = state.enemies.filter(e => !e.dead || e.deathAnim > 0);
+      for (const o of state.dungeon.objects) if (o.dead) o.alpha -= dt*2;
+      state.dungeon.objects = state.dungeon.objects.filter(o => !o.dead || o.alpha > 0);
+      for (const s of state.spawners) if (s.dead) s.alpha = (s.alpha ?? 1) - dt*2;
+      state.spawners = state.spawners.filter(s => !s.dead || s.alpha > 0);
+    }
+
+    // 階段に触れていて鍵を持っていれば次フロアへ。
+    // 演出中の二重発火を防ぐため floorChangingUntil でもガードする。
+    function checkStairs(){
+      const p = state.player;
+      const stairs = state.dungeon.stairs;
+      if (dist(p,stairs) < 26 && p.key && state.floorChangingUntil <= state.t) {
+        state.floorChangingUntil = state.t + 0.55;
+        addFloorTransition();
+        playSfx('floor');
+        showOverlay('Descending...');
+        setTimeout(() => {
+          if (!state || state.gameOver) return;
+          state.floor++;
+          p.hp = Math.min(p.hpMax, p.hp + Math.floor(p.hpMax * FLOOR_HEAL_RATIO));
+          spawnFloor(state);
+          state.floorChangingUntil = 0;
+        }, 320);
+      }
+    }
+
+    // 描画本体。
+    // マップ -> 障害物 -> 巣 -> 飛び道具 -> 敵 -> アイテム -> プレイヤー -> 追加エフェクト の順で重ねる。
+    function draw(){
+      const screenW = canvas.clientWidth, screenH = canvas.clientHeight;
+      const w = viewWidth, h = viewHeight;
+      const cam = {x: state.player.x - w/2, y: state.player.y - h/2};
+
+      // まず実画面全体をクリアしてから、論理座標系に合わせて拡大率を適用する。
+      // renderOffsetX/Y によって、指定サイズ描画時の余白を中央に寄せる。
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      ctx.clearRect(0,0,screenW,screenH);
+      ctx.setTransform(
+        devicePixelRatio * renderScale,
+        0,
+        0,
+        devicePixelRatio * renderScale,
+        devicePixelRatio * renderOffsetX * renderScale,
+        devicePixelRatio * renderOffsetY * renderScale
+      );
+
+      const d = state.dungeon;
+      ctx.fillStyle = d.theme.wall;
+      ctx.fillRect(0,0,w,h);
+
+      const minTx = Math.floor(cam.x/TILE)-1, maxTx = Math.floor((cam.x+w)/TILE)+1;
+      const minTy = Math.floor(cam.y/TILE)-1, maxTy = Math.floor((cam.y+h)/TILE)+1;
+      for(let y=minTy;y<=maxTy;y++){
+        for(let x=minTx;x<=maxTx;x++){
+          if (d.tiles[y] && d.tiles[y][x]===0) {
+            ctx.fillStyle = d.theme.path;
+            ctx.fillRect(x*TILE-cam.x, y*TILE-cam.y, TILE+1, TILE+1);
+          }
+        }
       }
 
-      drawBoard();
+      drawStairs(d.stairs.x-cam.x, d.stairs.y-cam.y, state.player.key);
+
+      for (const o of d.objects) {
+        ctx.save();
+        ctx.globalAlpha = o.dead ? Math.max(0,o.alpha) : 1;
+        ctx.fillStyle = o.color;
+        const scale = o.dead ? lerp(1, 0.5, 1-o.alpha) : 1;
+        ctx.translate(o.x+o.w/2-cam.x, o.y+o.h/2-cam.y);
+        ctx.scale(scale, scale);
+        ctx.fillRect(-o.w/2, -o.h/2, o.w, o.h);
+        ctx.restore();
+      }
+
+      // 巣のスポーン処理。近くに敵が多すぎる場合は増援を抑制する。
+      for (const s of state.spawners) {
+        ctx.save();
+        ctx.globalAlpha = s.dead ? Math.max(0,s.alpha??1) : 1;
+        drawSpawner(s.x-cam.x,s.y-cam.y,s.r,s.hp/s.maxHp);
+        ctx.restore();
+      }
+
+      // 飛び道具
+      for (const pr of state.projectiles) {
+        ctx.fillStyle = pr.color;
+        ctx.beginPath();
+        ctx.arc(pr.x-cam.x, pr.y-cam.y, pr.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // 爆発などの一時エフェクト。床より上、敵より下に置くと視認しやすい。
+      drawEffects(cam);
+      // 生き物とアイテム
+      for (const e of state.enemies) drawEnemy(e, cam);
+      for (const it of state.pickups) drawPickup(it, cam);
+      drawPlayer(state.player, cam);
+
+      const p = state.player;
+      if (state.swordSwing && p.sword) {
+        const elapsed = state.t - state.swordSwing.start;
+        if (elapsed <= state.swordSwing.duration) {
+          const half = state.swordSwing.duration / 2;
+          const ratio = elapsed < half ? (elapsed / half) : (1 - (elapsed - half) / half);
+          const dx = Math.cos(p.angle), dy = Math.sin(p.angle);
+          let reach = 12 + 72 * clamp(ratio, 0, 1);
+          const wallStep = 6;
+          for (let d = 12; d <= reach; d += wallStep) {
+            const tx = p.x + dx * d;
+            const ty = p.y + dy * d;
+            if (!canMoveCircle(tx, ty, 4)) {
+              reach = Math.max(12, d - wallStep);
+              break;
+            }
+          }
+          const sx = p.x - cam.x, sy = p.y - cam.y;
+          ctx.strokeStyle = tierColor(p.sword.tier);
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.moveTo(sx + dx*8, sy + dy*8);
+          ctx.lineTo(sx + dx*reach, sy + dy*reach);
+          ctx.stroke();
+        }
+      }
+
+      if (state.gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0,0,w,h);
+      }
+    }
+
+    function drawEnemy(e, cam){
+      const x = e.x-cam.x, y = e.y-cam.y;
+      ctx.save();
+      if (e.dead) {
+        const t = clamp(e.deathAnim/0.5,0,1);
+        ctx.globalAlpha = t;
+        const scale = 1 + (1-t)*0.35;
+        ctx.translate(x,y); ctx.scale(scale,scale);
+      } else {
+        ctx.translate(x,y);
+      }
+      ctx.rotate(e.angle || 0);
+      ctx.fillStyle = e.damageFlash > 0 ? '#ffffff' : e.color;
+      drawShape(e.shape, e.r, e.boss, e.poison);
+      if (e.boss) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, e.r * 0.45, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-e.r*0.55, 0);
+        ctx.lineTo(e.r*0.55, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+      if ((e.hpBarVisible || e.boss) && !e.dead) drawBar(x-e.r, y-e.r-16, e.r*2, 8, e.hp/e.hpMax);
+      if (!e.dead) {
+        ctx.fillStyle = '#111';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.max(0, Math.ceil(e.hp)), x, y+3);
+      }
+    }
+
+    function drawPlayer(p, cam){
+      const x = p.x-cam.x, y = p.y-cam.y;
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = state.t < p.poisonUntil ? '#c2ffd2' : '#f8f8f0';
+      drawShape(p.shape, p.r, false, false);
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0,0); ctx.lineTo(p.r+5,0); ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawShape(shape, r, boss=false, jagged=false){
+      ctx.beginPath();
+      if (jagged) {
+        const spikes = 14;
+        for (let i = 0; i < spikes * 2; i++) {
+          const a = (i / (spikes * 2)) * Math.PI * 2;
+          const rr = i % 2 === 0 ? r * 1.08 : r * 0.82;
+          const px = Math.cos(a) * rr;
+          const py = Math.sin(a) * rr;
+          if (!i) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      } else if (shape==='circle') ctx.arc(0,0,r,0,Math.PI*2);
+      else if (shape==='square') ctx.rect(-r,-r,r*2,r*2);
+      else if (shape==='triangle') { ctx.moveTo(r,0); ctx.lineTo(-r,-r*0.8); ctx.lineTo(-r,r*0.8); ctx.closePath(); }
+      else if (shape==='diamond') { ctx.moveTo(r,0); ctx.lineTo(0,-r); ctx.lineTo(-r,0); ctx.lineTo(0,r); ctx.closePath(); }
+      else if (shape==='hex') {
+        for(let i=0;i<6;i++){
+          const a = i/6*Math.PI*2;
+          const px = Math.cos(a)*r, py = Math.sin(a)*r;
+          if (!i) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+      }
+      ctx.fill();
+      if (boss) {
+        ctx.strokeStyle = '#fff6';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+
+    function drawPickup(it, cam){
+      const x = it.x-cam.x, y=it.y-cam.y;
+      if (it.kind==='heal') ctx.fillStyle = '#52d96b';
+      else if (it.kind==='antidote') ctx.fillStyle = '#58e0c1';
+      else if (it.kind==='mushroom') ctx.fillStyle = '#d95ce3';
+      else ctx.fillStyle = tierColor(it.tier);
+      ctx.beginPath();
+      ctx.arc(x,y,it.r,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(it.kind==='sword'?'剣':it.kind==='bow'?'弓':it.kind==='heal'?'H':it.kind==='mushroom'?'茸':'A', x, y+3);
+    }
+
+    function drawSpawner(x,y,r,ratio){
+      ctx.fillStyle = '#7b4e9a';
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#b386df';
+      ctx.beginPath(); ctx.arc(x,y,r*0.45,0,Math.PI*2); ctx.fill();
+      drawBar(x-r, y-r-12, r*2, 6, ratio);
+    }
+
+    function drawStairs(x,y,unlocked){
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.fillStyle = unlocked ? '#e5d36d' : '#a0a8b8';
+      for(let i=0;i<4;i++) ctx.fillRect(-14+i*4,-8+i*5,28-i*8,4);
+      if (!unlocked) {
+        ctx.fillStyle = '#d95d5d';
+        ctx.fillRect(-4,-18,8,10);
+      }
+      ctx.restore();
+    }
+
+    function drawBar(x,y,w,h,ratio){
+      ctx.fillStyle = '#7c1d1d';
+      ctx.fillRect(x,y,w,h);
+      ctx.fillStyle = '#29d44d';
+      ctx.fillRect(x,y,w*clamp(ratio,0,1),h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.strokeRect(x,y,w,h);
+    }
+
+    function uiUpdate(){
+      const p = state.player;
+      ui.floorText.textContent = state.floor;
+      ui.hpText.textContent = `${Math.ceil(p.hp)} / ${p.hpMax}`;
+      ui.hpFill.style.width = `${(p.hp/p.hpMax)*100}%`;
+      ui.levelText.textContent = `${p.level} (${p.xp}/${p.xpNext})`;
+      ui.goldText.textContent = p.gold;
+      ui.keyText.textContent = p.key ? 'あり' : 'なし';
+      ui.poisonText.textContent = state.t < p.poisonUntil ? `${Math.ceil(p.poisonUntil-state.t)}秒` : 'なし';
+      ui.mushroomText.textContent = p.antidoteMushrooms;
+      ui.weaponText.textContent = [
+        p.sword ? `剣:${p.sword.tier}` : '剣:wood',
+        p.bow ? `弓:${p.bow.tier}` : '弓なし'
+      ].join(' / ');
+      ui.swordText.textContent = p.sword ? (p.sword.permanent ? '∞' : `${p.sword.durability}/${p.sword.max}`) : '-';
+      ui.bowText.textContent = p.bow ? `${p.bow.arrows}/${p.bow.max}` : '-';
+      ui.buffs.innerHTML = `
+        <span class="badge">形状: ${p.shape}</span>
+        <span class="badge">攻 ${p.attack}</span>
+        <span class="badge">防 ${p.defense}</span>
+      `;
+    }
+
+    let last = performance.now();
+    function loop(now){
+      const dt = Math.min(0.033, (now-last)/1000);
+      last = now;
+      update(dt);
+      draw();
       requestAnimationFrame(loop);
     }
 
-    function safeTapHandler(handler) {
-      return (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        clearSelection();
-        handler(e);
-      };
-    }
-
-    function boardTap(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      clearSelection();
-
-      if (!game) {
-        startGame();
-        return;
-      }
-
-      if (game.state === 'gameover') {
-        startGame();
-        return;
-      }
-
-      if (game.state === 'lineClearing') return;
-
-      setPause(game.state === 'playing');
-    }
-
-    function bindSimpleTap(el, handler) {
-      const wrapped = safeTapHandler(handler);
-
-      if (IS_TOUCH_DEVICE) {
-        el.addEventListener('touchend', (e) => {
-          markTouch();
-          wrapped(e);
-        }, { passive: false });
-      } else {
-        el.addEventListener('mouseup', (e) => {
-          if (isSyntheticMouseAfterTouch()) return;
-          wrapped(e);
-        });
-      }
-    }
-
-    function bindTapButton(button, onTap) {
-      const press = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        clearSelection();
-        button.classList.add('active');
-        onTap();
-      };
-
-      const off = (e) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        clearSelection();
-        button.classList.remove('active');
-      };
-
-      if (IS_TOUCH_DEVICE) {
-        button.addEventListener('touchstart', (e) => {
-          markTouch();
-          press(e);
-        }, { passive: false });
-        button.addEventListener('touchend', off, { passive: false });
-        button.addEventListener('touchcancel', off, { passive: false });
-      } else {
-        button.addEventListener('mousedown', (e) => {
-          if (isSyntheticMouseAfterTouch()) return;
-          press(e);
-        });
-        button.addEventListener('mouseup', off);
-        button.addEventListener('mouseleave', off);
-      }
-    }
-
-    function bindHoldButton(button, onPress, onRelease) {
-      const press = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        clearSelection();
-        button.classList.add('active');
-        onPress();
-      };
-
-      const release = (e) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        clearSelection();
-        button.classList.remove('active');
-        onRelease();
-      };
-
-      if (IS_TOUCH_DEVICE) {
-        button.addEventListener('touchstart', (e) => {
-          markTouch();
-          press(e);
-        }, { passive: false });
-        button.addEventListener('touchend', release, { passive: false });
-        button.addEventListener('touchcancel', release, { passive: false });
-      } else {
-        button.addEventListener('mousedown', (e) => {
-          if (isSyntheticMouseAfterTouch()) return;
-          press(e);
-        });
-        button.addEventListener('mouseup', release);
-        button.addEventListener('mouseleave', release);
-      }
-    }
-
-    function pressLeft() {
-      if (!game || game.state !== 'playing') return;
-      if (!game.moveLeft) {
-        movePiece(-1);
-        game.moveLeft = true;
-        game.dasLeft = 0;
-        game.arrLeft = 0;
-      }
-    }
-
-    function releaseLeft() {
-      if (!game) return;
-      game.moveLeft = false;
-    }
-
-    function pressRight() {
-      if (!game || game.state !== 'playing') return;
-      if (!game.moveRight) {
-        movePiece(1);
-        game.moveRight = true;
-        game.dasRight = 0;
-        game.arrRight = 0;
-      }
-    }
-
-    function releaseRight() {
-      if (!game) return;
-      game.moveRight = false;
-    }
-
-    function tapRotateLeft() {
-      if (!game || game.state !== 'playing') return;
-      rotatePiece(-1);
-    }
-
-    function tapRotateRight() {
-      if (!game || game.state !== 'playing') return;
-      rotatePiece(1);
-    }
-
-    function tapDrop() {
-      hardDrop();
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX','KeyC','KeyP','Enter'].includes(e.code)) {
-        e.preventDefault();
-      }
-
-      if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && e.repeat) return;
-
-      if (!game && e.code === 'Enter') {
-        startGame();
-        return;
-      }
-
-      if (game?.state === 'gameover' && e.code === 'Enter') {
-        startGame();
-        return;
-      }
-
-      if (e.code === 'KeyP' && game) {
-        setPause(game.state === 'playing');
-        return;
-      }
-
-      if (!game || game.state !== 'playing') return;
-
-      switch (e.code) {
-        case 'ArrowLeft':
-          if (!game.moveLeft) {
-            movePiece(-1);
-            game.moveLeft = true;
-            game.dasLeft = 0;
-            game.arrLeft = 0;
-          }
-          break;
-        case 'ArrowRight':
-          if (!game.moveRight) {
-            movePiece(1);
-            game.moveRight = true;
-            game.dasRight = 0;
-            game.arrRight = 0;
-          }
-          break;
-        case 'ArrowDown':
-        case 'Space':
-          hardDrop();
-          break;
-        case 'ArrowUp':
-        case 'KeyX':
-          rotatePiece(1);
-          break;
-        case 'KeyZ':
-          rotatePiece(-1);
-          break;
-        case 'KeyC':
-          holdPiece();
-          break;
-      }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (!game) return;
-      if (e.code === 'ArrowLeft') game.moveLeft = false;
-      if (e.code === 'ArrowRight') game.moveRight = false;
-    });
-
-    bindSimpleTap(canvas, boardTap);
-    bindSimpleTap(overlayEl, boardTap);
-    bindSimpleTap(startBtn, () => startGame());
-    bindSimpleTap(resumeBtn, () => setPause(false));
-    bindSimpleTap(pauseBtn, () => {
-      if (!game) {
-        startGame();
-        return;
-      }
-      if (game.state === 'gameover' || game.state === 'lineClearing') return;
-      setPause(game.state === 'playing');
-    });
-
-    bindTapButton(btnZ, tapRotateLeft);
-    bindTapButton(btnX, tapRotateRight);
-    bindHoldButton(btnLeft, pressLeft, releaseLeft);
-    bindTapButton(btnDrop, tapDrop);
-    bindHoldButton(btnRight, pressRight, releaseRight);
-
-    createMiniGrid(holdEl);
+    init();
+    uiUpdate();
     requestAnimationFrame(loop);
   </script>
 </body>
