@@ -1,3 +1,4 @@
+<!-- version: v1.0.5 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -69,6 +70,7 @@
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
       border-radius: 10px;
+      touch-action: manipulation;
     }
 
     .hud-left,
@@ -155,6 +157,7 @@
       font-size: 14px;
       font-weight: 800;
       box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      touch-action: manipulation;
     }
 
     .side-btn:active,
@@ -224,6 +227,7 @@
       font-weight: 800;
       background: #dfe7ff;
       color: #111827;
+      touch-action: manipulation;
     }
 
     .main-btn.secondary {
@@ -444,6 +448,20 @@
     let game = null;
     let lastTime = 0;
     let accumulator = 0;
+
+    const IS_TOUCH_DEVICE =
+      ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+
+    let lastTouchTime = 0;
+
+    function markTouch() {
+      lastTouchTime = Date.now();
+    }
+
+    function isSyntheticMouseAfterTouch() {
+      return Date.now() - lastTouchTime < 700;
+    }
 
     function createMiniGrid(container) {
       container.innerHTML = '';
@@ -856,6 +874,14 @@
       requestAnimationFrame(loop);
     }
 
+    function safeTapHandler(handler) {
+      return (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handler(e);
+      };
+    }
+
     function boardTap(e) {
       if (e) {
         e.preventDefault();
@@ -877,50 +903,18 @@
       setPause(game.state === 'playing');
     }
 
-    function addTap(el, handler) {
-      const wrapped = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handler(e);
-      };
+    function bindSimpleTap(el, handler) {
+      const wrapped = safeTapHandler(handler);
 
-      if (window.PointerEvent) {
-        el.addEventListener('pointerup', wrapped);
+      if (IS_TOUCH_DEVICE) {
+        el.addEventListener('touchend', (e) => {
+          markTouch();
+          wrapped(e);
+        }, { passive: false });
       } else {
-        el.addEventListener('touchend', wrapped, { passive: false });
-        el.addEventListener('click', wrapped);
-      }
-    }
-
-    function bindHoldButton(button, onPress, onRelease) {
-      const press = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        button.classList.add('active');
-        onPress();
-      };
-
-      const release = (e) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        button.classList.remove('active');
-        onRelease();
-      };
-
-      if (window.PointerEvent) {
-        button.addEventListener('pointerdown', press);
-        button.addEventListener('pointerup', release);
-        button.addEventListener('pointercancel', release);
-        button.addEventListener('pointerleave', release);
-      } else {
-        button.addEventListener('touchstart', press, { passive: false });
-        button.addEventListener('touchend', release, { passive: false });
-        button.addEventListener('touchcancel', release, { passive: false });
-        button.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        el.addEventListener('mouseup', (e) => {
+          if (isSyntheticMouseAfterTouch()) return;
+          wrapped(e);
         });
       }
     }
@@ -941,19 +935,54 @@
         button.classList.remove('active');
       };
 
-      if (window.PointerEvent) {
-        button.addEventListener('pointerdown', press);
-        button.addEventListener('pointerup', off);
-        button.addEventListener('pointercancel', off);
-        button.addEventListener('pointerleave', off);
-      } else {
-        button.addEventListener('touchstart', press, { passive: false });
+      if (IS_TOUCH_DEVICE) {
+        button.addEventListener('touchstart', (e) => {
+          markTouch();
+          press(e);
+        }, { passive: false });
         button.addEventListener('touchend', off, { passive: false });
         button.addEventListener('touchcancel', off, { passive: false });
-        button.addEventListener('click', (e) => {
+      } else {
+        button.addEventListener('mousedown', (e) => {
+          if (isSyntheticMouseAfterTouch()) return;
+          press(e);
+        });
+        button.addEventListener('mouseup', off);
+        button.addEventListener('mouseleave', off);
+      }
+    }
+
+    function bindHoldButton(button, onPress, onRelease) {
+      const press = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        button.classList.add('active');
+        onPress();
+      };
+
+      const release = (e) => {
+        if (e) {
           e.preventDefault();
           e.stopPropagation();
+        }
+        button.classList.remove('active');
+        onRelease();
+      };
+
+      if (IS_TOUCH_DEVICE) {
+        button.addEventListener('touchstart', (e) => {
+          markTouch();
+          press(e);
+        }, { passive: false });
+        button.addEventListener('touchend', release, { passive: false });
+        button.addEventListener('touchcancel', release, { passive: false });
+      } else {
+        button.addEventListener('mousedown', (e) => {
+          if (isSyntheticMouseAfterTouch()) return;
+          press(e);
         });
+        button.addEventListener('mouseup', release);
+        button.addEventListener('mouseleave', release);
       }
     }
 
@@ -1065,11 +1094,11 @@
       if (e.code === 'ArrowRight') game.moveRight = false;
     });
 
-    addTap(canvas, boardTap);
-    addTap(overlayEl, boardTap);
-    addTap(startBtn, () => startGame());
-    addTap(resumeBtn, () => setPause(false));
-    addTap(pauseBtn, () => {
+    bindSimpleTap(canvas, boardTap);
+    bindSimpleTap(overlayEl, boardTap);
+    bindSimpleTap(startBtn, () => startGame());
+    bindSimpleTap(resumeBtn, () => setPause(false));
+    bindSimpleTap(pauseBtn, () => {
       if (!game) {
         startGame();
         return;
